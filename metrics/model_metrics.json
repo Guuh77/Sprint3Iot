@@ -1,0 +1,103 @@
+{
+  "accuracy": 0.908,
+  "confusion_matrix": [
+    [
+      654,
+      66
+    ],
+    [
+      26,
+      254
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.961764705882353,
+      "recall": 0.9083333333333333,
+      "f1-score": 0.9342857142857143,
+      "support": 720.0
+    },
+    "1": {
+      "precision": 0.79375,
+      "recall": 0.9071428571428571,
+      "f1-score": 0.8466666666666667,
+      "support": 280.0
+    },
+    "accuracy": 0.908,
+    "macro avg": {
+      "precision": 0.8777573529411764,
+      "recall": 0.9077380952380952,
+      "f1-score": 0.8904761904761904,
+      "support": 1000.0
+    },
+    "weighted avg": {
+      "precision": 0.9147205882352941,
+      "recall": 0.908,
+      "f1-score": 0.9097523809523809,
+      "support": 1000.0
+    }
+  },
+  "feature_importance": {
+    "dias_inativos": 0.6105,
+    "horas_estudadas": 0.1663,
+    "exercicios_concluidos": 0.1293,
+    "media_notas": 0.0939
+  },
+  "sample_predictions": [
+    {
+      "entrada": {
+        "horas_estudadas": 20.0,
+        "exercicios_concluidos": 33.0,
+        "media_notas": 2.56,
+        "dias_inativos": 79.0
+      },
+      "real": 1,
+      "previsto": 1,
+      "probabilidade_evasao": 0.998
+    },
+    {
+      "entrada": {
+        "horas_estudadas": 54.0,
+        "exercicios_concluidos": 73.0,
+        "media_notas": 7.28,
+        "dias_inativos": 72.0
+      },
+      "real": 0,
+      "previsto": 0,
+      "probabilidade_evasao": 0.2364
+    },
+    {
+      "entrada": {
+        "horas_estudadas": 62.0,
+        "exercicios_concluidos": 7.0,
+        "media_notas": 8.55,
+        "dias_inativos": 69.0
+      },
+      "real": 1,
+      "previsto": 1,
+      "probabilidade_evasao": 0.7991
+    },
+    {
+      "entrada": {
+        "horas_estudadas": 47.0,
+        "exercicios_concluidos": 67.0,
+        "media_notas": 2.9,
+        "dias_inativos": 50.0
+      },
+      "real": 0,
+      "previsto": 0,
+      "probabilidade_evasao": 0.1018
+    },
+    {
+      "entrada": {
+        "horas_estudadas": 24.0,
+        "exercicios_concluidos": 51.0,
+        "media_notas": 5.62,
+        "dias_inativos": 7.0
+      },
+      "real": 0,
+      "previsto": 0,
+      "probabilidade_evasao": 0.0075
+    }
+  ]
+}

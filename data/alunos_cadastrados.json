@@ -1,0 +1,34 @@
+[
+  {
+    "id": "e185dda8-3465-49b9-bc46-5bdf590e6032",
+    "nome": "Gustavo",
+    "horas_estudadas": 80.0,
+    "exercicios_concluidos": 52.0,
+    "media_notas": 9.0,
+    "dias_inativos": 1.0
+  },
+  {
+    "id": "37de8dbd-8266-47db-9130-a9863161c43d",
+    "nome": "Henrique",
+    "horas_estudadas": 32.0,
+    "exercicios_concluidos": 24.0,
+    "media_notas": 6.3,
+    "dias_inativos": 30.0
+  },
+  {
+    "id": "a902a70d-de7d-46cf-b5e9-1e1a71a3bd71",
+    "nome": "André",
+    "horas_estudadas": 60.0,
+    "exercicios_concluidos": 30.0,
+    "media_notas": 7.0,
+    "dias_inativos": 15.0
+  },
+  {
+    "id": "f892aa55-b173-4c39-89f3-2343e66b4da4",
+    "nome": "Daniel",
+    "horas_estudadas": 35.0,
+    "exercicios_concluidos": 18.0,
+    "media_notas": 5.4,
+    "dias_inativos": 50.0
+  }
+]

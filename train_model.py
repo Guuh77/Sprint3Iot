@@ -1,51 +1,119 @@
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from pathlib import Path
+import json
 import pickle
 
-def gerar_dados_mock(qtd_alunos=1000):
-    np.random.seed(42)
-    
-    # Criando colunas que impactam na desistência
-    horas_estudadas = np.random.randint(2, 60, size=qtd_alunos)
-    exercicios_concluidos = np.random.randint(0, 20, size=qtd_alunos)
-    media_notas = np.random.uniform(3.0, 10.0, size=qtd_alunos)
-    dias_inativos = np.random.randint(0, 30, size=qtd_alunos)
-    
-    # Lógica de evasão (quanto menos estudo/exercicios e mais inativo, maior chance)
-    prob_evasao = (dias_inativos * 0.4) - (horas_estudadas * 0.2) - (exercicios_concluidos * 0.3) - (media_notas * 0.1)
-    
-    # Normalizando para probabilidades e convertendo em classes
-    limite = np.percentile(prob_evasao, 70) # Forçando uns 30% de evasão
-    evasao = (prob_evasao > limite).astype(int)
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
 
-    df = pd.DataFrame({
-        'horas_estudadas': horas_estudadas,
-        'exercicios_concluidos': exercicios_concluidos,
-        'media_notas': media_notas,
-        'dias_inativos': dias_inativos,
-        'evasao': evasao
-    })
-    return df
 
-print("1. Gerando dados de treinamento...")
-df = gerar_dados_mock(2500)
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+MODEL_DIR = BASE_DIR / "models"
+METRICS_DIR = BASE_DIR / "metrics"
+FEATURES = ["horas_estudadas", "exercicios_concluidos", "media_notas", "dias_inativos"]
 
-X = df[['horas_estudadas', 'exercicios_concluidos', 'media_notas', 'dias_inativos']]
-y = df['evasao']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+def gerar_dados_sinteticos(qtd_alunos=5000):
+    rng = np.random.default_rng(42)
 
-print("2. Treinando o Modelo Random Forest...")
-clf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
-clf.fit(X_train, y_train)
+    horas_estudadas = rng.integers(1, 120, size=qtd_alunos)
+    exercicios_concluidos = rng.integers(0, 80, size=qtd_alunos)
+    media_notas = rng.uniform(2.0, 10.0, size=qtd_alunos).round(2)
+    dias_inativos = rng.integers(0, 90, size=qtd_alunos)
 
-score = clf.score(X_test, y_test)
-print(f"-> Acurácia do modelo no teste: {score:.2%}")
+    score_risco = (
+        dias_inativos * 0.48
+        - horas_estudadas * 0.18
+        - exercicios_concluidos * 0.24
+        - media_notas * 1.65
+        + rng.normal(0, 4.5, size=qtd_alunos)
+    )
 
-print("3. Salvando o modelo na raiz do projeto (modelo_evasao.pkl)...")
-with open("modelo_evasao.pkl", "wb") as f:
-    pickle.dump(clf, f)
-    
-print("Pronto! Modelo criado com sucesso. Agora você pode rodar o Streamlit.")
+    limite = np.percentile(score_risco, 72)
+    evasao = (score_risco > limite).astype(int)
+
+    return pd.DataFrame(
+        {
+            "horas_estudadas": horas_estudadas,
+            "exercicios_concluidos": exercicios_concluidos,
+            "media_notas": media_notas,
+            "dias_inativos": dias_inativos,
+            "evasao": evasao,
+        }
+    )
+
+
+def main():
+    DATA_DIR.mkdir(exist_ok=True)
+    MODEL_DIR.mkdir(exist_ok=True)
+    METRICS_DIR.mkdir(exist_ok=True)
+
+    print("1. Gerando dataset sintetico de comportamento de alunos...")
+    df = gerar_dados_sinteticos()
+    dataset_path = DATA_DIR / "alunos_evasao_sintetico.csv"
+    df.to_csv(dataset_path, index=False)
+
+    X = df[FEATURES]
+    y = df["evasao"]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    print("2. Treinando Random Forest Classifier...")
+    model = RandomForestClassifier(
+        n_estimators=180,
+        max_depth=8,
+        min_samples_leaf=4,
+        random_state=42,
+        class_weight="balanced",
+    )
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)[:, 1]
+
+    metrics = {
+        "accuracy": round(float(accuracy_score(y_test, y_pred)), 4),
+        "confusion_matrix": confusion_matrix(y_test, y_pred).tolist(),
+        "classification_report": classification_report(y_test, y_pred, output_dict=True),
+        "feature_importance": dict(
+            sorted(
+                zip(FEATURES, [round(float(value), 4) for value in model.feature_importances_]),
+                key=lambda item: item[1],
+                reverse=True,
+            )
+        ),
+        "sample_predictions": [
+            {
+                "entrada": X_test.iloc[index].to_dict(),
+                "real": int(y_test.iloc[index]),
+                "previsto": int(y_pred[index]),
+                "probabilidade_evasao": round(float(y_proba[index]), 4),
+            }
+            for index in range(5)
+        ],
+    }
+
+    model_path = MODEL_DIR / "modelo_evasao.pkl"
+    metrics_path = METRICS_DIR / "model_metrics.json"
+
+    with open(model_path, "wb") as model_file:
+        pickle.dump(model, model_file)
+
+    with open(metrics_path, "w", encoding="utf-8") as metrics_file:
+        json.dump(metrics, metrics_file, indent=2, ensure_ascii=False)
+
+    print(f"3. Modelo salvo em: {model_path}")
+    print(f"4. Dataset salvo em: {dataset_path}")
+    print(f"5. Metricas salvas em: {metrics_path}")
+    print(f"Acuracia no conjunto de teste: {metrics['accuracy']:.2%}")
+    print("Importancia das variaveis:")
+    for feature, importance in metrics["feature_importance"].items():
+        print(f"   - {feature}: {importance}")
+
+
+if __name__ == "__main__":
+    main()

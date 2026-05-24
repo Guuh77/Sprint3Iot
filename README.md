@@ -1,68 +1,164 @@
-# Documentação Técnica: IA - Predição de Evasão (Challenge IoT/Oracle)
+# Sprint 4 IoT - OracleLearn IA de Predicao de Evasao
 
-Este repositório contém a documentação técnica e o código-fonte (mock) referentes ao desenvolvimento e integração da Inteligência Artificial em nosso projeto.
+Esta entrega implementa um modelo de Inteligencia Artificial para prever risco de evasao de alunos na plataforma OracleLearn. A integracao com APEX foi substituida, conforme escopo da demonstracao, por uma API Python consumida por um painel Streamlit demonstrativo.
 
-## 1. Definição do Problema de IA dentro do APEX
-**Problema:** Alta taxa de desistência (evasão Escolar) de alunos em cursos focados em nossa plataforma de ensino mobile.
-**Uso na Aplicação APEX:** 
-A nossa aplicação APEX consumirá nosso banco de dados relacional para prover dashboards à coordenação acadêmica. O módulo de Inteligência Artificial processará dados de estudo em tempo real, avaliando as notas, acessos e dias inativos, marcando os alunos com alto risco de abandono (Flags no dashboard). Isso permitirá ações preventivas rápidas por parte dos tutores (ex: envio de vouchers, mensagens personalizadas de incentivo).
+## Objetivo
 
-## 2. Escolha do Modelo de IA
-O modelo escolhido foi o **Random Forest Classifier** (via Scikit-Learn).
-**Justificativa:**
-- Nosso problema é de Classificação (O aluno vai desistir? Sim/Não).
-- Modelos complexos de *Deep Learning* ou *LLM* demandam alto processamento e, neste caso específico (dados tabulares de logs comportamentais), o Random Forest entrega alta interpretabilidade e acurácia. O Random Forest suporta bem *outliers* de acessos e cria uma floresta de decisões que simula uma coordenação decidindo por que o aluno pode desistir (ex: "Se inativo a mais de 15 dias e com nota baixa").
+Identificar alunos com maior probabilidade de abandono com base em indicadores de uso:
 
-## 3. Dados Alimentados à IA
-Os dados necessários foram mapeados dos logs coletados no Banco de Dados Oracle.
-- **Origem dos Dados:** Base do aplicativo principal em **React Native** consumida pela nossa API e gravada num schema do *Oracle Database*.
-- **Formato:** Dados estruturados (Colunas relacionais e Datasets tabulares).
-- **Atributos Chave:** `horas_estudadas`, `exercicios_concluidos`, `media_notas`, `dias_inativos`.
-- **Quantidade Necessária:** O modelo requer um histórico de, no mínimo, 5.000 a 10.000 registros para garantir uma generalização acurada em produção.
+- `horas_estudadas`
+- `exercicios_concluidos`
+- `media_notas`
+- `dias_inativos`
 
-## 4. Diagrama de Comunicação com Oracle Database e APEX
-No cenário proposto de arquitetura, este será o mapeamento e comunicação da plataforma:
+O sistema permite cadastrar alunos, salvar seus indicadores, processar a turma em lote e retornar classe prevista, probabilidade de evasao, nivel de risco e recomendacao de intervencao.
 
-```mermaid
-sequenceDiagram
-    participant RN as React Native (Alunos)
-    participant ODB as Oracle Database
-    participant APEX as Oracle APEX / Admin
-    participant AI as Módulo IA (API Python/Flask)
+## Tecnologias
 
-    RN->>ODB: Grava Logs Diários (Acesso/Notas/Tempo)
-    APEX->>ODB: Solicita listagem de Alunos e Rendimentos
-    ODB-->>APEX: Retorna dados cru do Aluno
-    APEX->>AI: Realiza Request REST p/ Módulo Preditivo (Envia logs do aluno)
-    AI-->>APEX: Retorna Probabilidade de Evasão (0 ou 1)
-    APEX->>APEX: Atualiza Status visual com bandeira e exibe no Dashboard.
+- Python
+- Scikit-learn
+- Random Forest Classifier
+- Flask + Flask-CORS
+- Streamlit
+
+## Estrutura
+
+- `train_model.py`: gera dataset sintetico, treina o modelo e salva metricas.
+- `ai_core.py`: centraliza carregamento do modelo, validacao e inferencia.
+- `api.py`: API REST consumida pelo painel demonstrativo.
+- `app.py`: painel Streamlit demonstrativo.
+- `data/`: dataset sintetico gerado.
+- `data/alunos_cadastrados.json`: alunos salvos pelo painel/API.
+- `models/`: modelo treinado em `.pkl`.
+- `metrics/`: metricas, matriz de confusao e importancia das variaveis.
+
+## Como executar
+
+Crie o ambiente e instale dependencias:
+
+```bash
+cd Sprint4Iot
+pip install -r requirements.txt
 ```
 
-## 5. Fluxo de Funcionamento (Quando o Usuário Aciona a Funcionalidade)
-1. O administrador acessa sua tela do **Oracle APEX** e carrega o painel principal da plataforma.
-2. Atrás dos panos, o APEX executa uma macro (via REST Data Sources ou chamadas PL/SQL) disparando uma requisição aos servidores Python rodando a IA.
-3. O servidor Python retorna uma matriz de previsões (ex: Aluno X tem 80% de chance de desistir).
-4. O frontend do APEX renderiza alunos em vermelho de maneira dinâmica no grid relacional.
+No Windows/PowerShell, se quiser isolar o ambiente:
 
----
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
 
-## 🛠️ Instruções de Uso (Demonstração Local - MVP Simulado)
+Treine o modelo:
 
-Conforme orientação acadêmica, para esta entrega isolamos a demonstração da IA de seu acoplamento ao APEX para testar apenas o funcionamento analítico da solução. Substituímos momentaneamente a camada do *Oracle APEX* por um painel mock interativo escrito em Python (**Streamlit**) para o roteiro do Pitch.
+```bash
+python train_model.py
+```
 
-### Passos de Instalação e Execução
-1. Abra um terminal na pasta do projeto.
-2. Instale as dependências executando:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Treine e gere o modelo falso digitando o comando:
-   ```bash
-   python train_model.py
-   ```
-   *(Isso irá simular registros de alunos e criar o arquivo `modelo_evasao.pkl`).*
-4. Inicie o dashboard administrativo falso simulando o painel APEX:
-   ```bash
-   python -m streamlit run app.py ou streamlit run app.py
-   ```
-5. Acesse seu navegador local na porta recomendada e teste o modelo de Evasão.
+Inicie a API de IA:
+
+```bash
+python api.py
+```
+
+Teste a API:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Opcionalmente, rode o painel Streamlit:
+
+```bash
+streamlit run app.py
+```
+
+No painel, cadastre alunos, veja a turma salva e clique em `Processar turma cadastrada`.
+
+## Endpoints
+
+### GET `/health`
+
+Verifica disponibilidade da API.
+
+### GET `/model-info`
+
+Retorna tipo de modelo, features e metricas salvas.
+
+### POST `/predict`
+
+Entrada:
+
+```json
+{
+  "horas_estudadas": 8,
+  "exercicios_concluidos": 2,
+  "media_notas": 3.9,
+  "dias_inativos": 35
+}
+```
+
+Saida:
+
+```json
+{
+  "classe": 1,
+  "risco": "alto",
+  "probabilidade_evasao": 98.4,
+  "recomendacao": "Acionar tutor, oferecer monitoria e enviar mensagem personalizada ainda hoje."
+}
+```
+
+### POST `/predict-batch`
+
+Recebe uma lista de alunos e retorna predicoes em lote para simular um painel administrativo.
+
+### GET `/students`
+
+Lista os alunos cadastrados no sistema.
+
+### POST `/students`
+
+Cadastra um aluno e salva os indicadores em `data/alunos_cadastrados.json`.
+
+Entrada:
+
+```json
+{
+  "nome": "Joao Silva",
+  "horas_estudadas": 15,
+  "exercicios_concluidos": 5,
+  "media_notas": 5.5,
+  "dias_inativos": 18
+}
+```
+
+### DELETE `/students/{id}`
+
+Remove um aluno cadastrado.
+
+### DELETE `/students`
+
+Limpa toda a turma cadastrada.
+
+### POST `/students/predict`
+
+Processa todos os alunos cadastrados, envia os indicadores para o modelo de IA e retorna as recomendacoes por aluno.
+
+## Roteiro para o video
+
+1. Explicar que a IA substitui a analise manual de risco de abandono.
+2. Mostrar `train_model.py` treinando o Random Forest e gerando metricas.
+3. Rodar `python api.py` e abrir `/health` ou `/model-info`.
+4. Abrir o painel Streamlit no navegador.
+5. Cadastrar um aluno com bom desempenho e outro aluno com alto numero de dias inativos.
+6. Mostrar a tabela de turma cadastrada sendo atualizada.
+7. Clicar em `Processar turma cadastrada` e mostrar riscos diferentes no lote.
+8. Mostrar a recomendacao gerada para apoiar a decisao do tutor.
+
+## Observacao para entrega
+
+Ao gerar o `.zip`, nao inclua `.venv/`, `__pycache__/` nem arquivos temporarios. O projeto deve levar o codigo-fonte, README, dataset/modelo/metricas gerados e o arquivo com links do video e GitHub.
+
+## Observacao sobre APEX
+
+A disciplina permitiu demonstrar a integracao fora do APEX nesta entrega. Por isso, o foco tecnico ficou em IA funcional, API REST consumivel e painel demonstrativo.
