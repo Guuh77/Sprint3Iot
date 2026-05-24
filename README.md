@@ -143,22 +143,3 @@ Limpa toda a turma cadastrada.
 ### POST `/students/predict`
 
 Processa todos os alunos cadastrados, envia os indicadores para o modelo de IA e retorna as recomendacoes por aluno.
-
-## Roteiro para o video
-
-1. Explicar que a IA substitui a analise manual de risco de abandono.
-2. Mostrar `train_model.py` treinando o Random Forest e gerando metricas.
-3. Rodar `python api.py` e abrir `/health` ou `/model-info`.
-4. Abrir o painel Streamlit no navegador.
-5. Cadastrar um aluno com bom desempenho e outro aluno com alto numero de dias inativos.
-6. Mostrar a tabela de turma cadastrada sendo atualizada.
-7. Clicar em `Processar turma cadastrada` e mostrar riscos diferentes no lote.
-8. Mostrar a recomendacao gerada para apoiar a decisao do tutor.
-
-## Observacao para entrega
-
-Ao gerar o `.zip`, nao inclua `.venv/`, `__pycache__/` nem arquivos temporarios. O projeto deve levar o codigo-fonte, README, dataset/modelo/metricas gerados e o arquivo com links do video e GitHub.
-
-## Observacao sobre APEX
-
-A disciplina permitiu demonstrar a integracao fora do APEX nesta entrega. Por isso, o foco tecnico ficou em IA funcional, API REST consumivel e painel demonstrativo.
